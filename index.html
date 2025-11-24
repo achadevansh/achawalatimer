@@ -145,7 +145,7 @@
     <div class="w-full max-w-5xl flex justify-end mb-4">
         <button onclick="toggleCinemaMode()" class="flex items-center gap-2 text-sm font-semibold text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors p-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-            <span>Lock In </span>
+            <span id="mode-text">Lock In</span>
         </button>
     </div>
 
@@ -159,7 +159,7 @@
             <div class="text-left space-y-1">
                 <div class="flex items-center gap-3 mb-4">
                     <div class="w-2 h-2 rounded-full bg-orange-300"></div>
-                    <h1 class="text-sm font-bold tracking-widest uppercase text-[var(--text-muted)]">Nigga Focus </h1>
+                    <h1 class="text-sm font-bold tracking-widest uppercase text-[var(--text-muted)]">Lock In Focus</h1>
                 </div>
                 
                 <!-- Task Input -->
@@ -260,7 +260,7 @@
         }
 
         // --- Messaging System ---
-        const workMessages = [
+            const workMessages = [
             "Focus on the process Bitch ",
             "Breathe stink your",
             "Maa chod do",
@@ -271,6 +271,7 @@
             "Keep the shii up.",
             "Trust in niggasaourus"
         ];
+
 
         const doneMessages = [
             "Gand faad di lessgoo",
@@ -302,21 +303,31 @@
             currentVideoIndex = Math.floor(Math.random() * playlist.length);
             updateVideoTitleUI();
 
+            // FIXED: Added origin and host to fix "Play on YouTube" issues
+            const origin = window.location.origin === "null" || window.location.protocol === 'file:' 
+                ? "https://www.youtube.com" 
+                : window.location.origin;
+
             player = new YT.Player('player', {
                 height: '100%',
                 width: '100%',
                 videoId: playlist[currentVideoIndex].id,
+                host: 'https://www.youtube.com', // Force SSL
                 playerVars: {
                     'playsinline': 1,
                     'controls': 1, 
                     'modestbranding': 1,
                     'rel': 0,
                     'showinfo': 0,
-                    'iv_load_policy': 3
+                    'iv_load_policy': 3,
+                    'enablejsapi': 1,
+                    'origin': origin, // Crucial for embedding
+                    'widget_referrer': origin
                 },
                 events: {
                     'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError // Add error handling
                 }
             });
         }
@@ -326,6 +337,14 @@
         function onPlayerStateChange(event) {
             if (event.data === YT.PlayerState.ENDED && timerId !== null) {
                 player.playVideo();
+            }
+        }
+
+        function onPlayerError(event) {
+            console.warn("YouTube Player Error:", event.data);
+            // If video is restricted (150) or not found (100), skip to next random video
+            if (event.data === 150 || event.data === 101 || event.data === 100) {
+                playRandomVideo();
             }
         }
 
@@ -464,7 +483,7 @@
             document.body.classList.toggle('cinema-mode');
             const btnText = document.querySelector('button[onclick="toggleCinemaMode()"] span');
             isCinemaMode = !isCinemaMode;
-            btnText.textContent = isCinemaMode ? "Light Mode" : "Cinema Mode";
+            btnText.textContent = isCinemaMode ? "Light Mode" : "Lock In";
         }
 
         function displayMessage(msg) {
