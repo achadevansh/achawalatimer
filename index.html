@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nigga Focus</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #F2F0E9;
+            --card-bg: #FFFFFF;
+            --text-main: #44403C;
+            --text-muted: #78716C;
+            --accent: #57534E;
+            --border-light: #E7E5E4;
+            --border-dark: #44403C;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Nunito', sans-serif;
+            color: var(--text-main);
+            transition: background-color 0.5s ease;
+        }
+        
+        body.cinema-mode {
+            --bg-color: #1C1917;
+            --card-bg: #292524;
+            --text-main: #E7E5E4;
+            --text-muted: #A8A29E;
+            --accent: #D6D3CE;
+        }
+        h1, h2, .timer-display, .serif-text {
+            font-family: 'Lora', serif;
+        }
+        
+        /* --- Components --- */
+        
+        /* The Main Card */
+        .dashboard-card {
+            background-color: var(--card-bg);
+            transition: all 0.5s ease;
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05);
+        }
+
+        /* Task Input - Minimalist Underline */
+        .task-input {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid var(--border-light);
+            color: var(--text-main);
+            font-family: 'Lora', serif;
+            transition: border-color 0.3s ease;
+        }
+        .task-input:focus {
+            outline: none;
+            border-color: var(--text-muted);
+        }
+        .cinema-mode .task-input {
+            border-bottom-color: var(--border-dark);
+        }
+        .cinema-mode .task-input:focus {
+            border-bottom-color: #A8A29E;
+        }
+
+        /* Video Frame - The "Window" */
+        .video-frame {
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+            background-color: #000;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        /* Buttons */
+        .btn-primary {
+            background-color: var(--accent);
+            color: var(--bg-color);
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            border: 1px solid var(--border-light);
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+            background: transparent;
+        }
+        .btn-secondary:hover {
+            border-color: var(--text-muted);
+            color: var(--text-main);
+        }
+        .cinema-mode .btn-secondary {
+            border-color: var(--border-dark);
+        }
+
+        /* Custom Input Styling (Matches btn-secondary) */
+        .input-secondary {
+            border: 1px solid var(--border-light);
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+            background: transparent;
+        }
+        .input-secondary:focus {
+            border-color: var(--text-muted);
+            color: var(--text-main);
+            outline: none;
+        }
+        .cinema-mode .input-secondary {
+            border-color: var(--border-dark);
+        }
+        .input-secondary::-webkit-outer-spin-button,
+        .input-secondary::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* Fade Animation */
+        .fade-in {
+            animation: fadeIn 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Utilities */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 md:p-8">
+
+    <!-- Top Bar (Cinema Toggle) -->
+    <div class="w-full max-w-5xl flex justify-end mb-4">
+        <button onclick="toggleCinemaMode()" class="flex items-center gap-2 text-sm font-semibold text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors p-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            <span>Lock In </span>
+        </button>
+    </div>
+
+    <!-- Main Dashboard -->
+    <main class="dashboard-card w-full max-w-6xl rounded-[2rem] overflow-hidden p-6 md:p-8 flex flex-col lg:flex-row gap-8 lg:gap-12 border border-[rgba(0,0,0,0.03)]">
+        
+        <!-- LEFT PANEL: Control Center (40%) -->
+        <div class="lg:w-[38%] flex flex-col justify-center space-y-8">
+            
+            <!-- Header & Identity -->
+            <div class="text-left space-y-1">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-2 h-2 rounded-full bg-orange-300"></div>
+                    <h1 class="text-sm font-bold tracking-widest uppercase text-[var(--text-muted)]">Nigga Focus </h1>
+                </div>
+                
+                <!-- Task Input -->
+                <div class="relative group">
+                    <input type="text" id="task-input" placeholder="What is your main focus?" 
+                        class="task-input w-full text-2xl md:text-3xl py-2 placeholder-[var(--text-muted)]/50 bg-transparent">
+                </div>
+            </div>
+
+            <!-- Timer Block -->
+            <div class="py-4">
+                <div class="relative">
+                    <div id="timer-display" class="timer-display text-[5rem] md:text-[6.5rem] leading-none tracking-tight text-[var(--text-main)] font-medium tabular-nums">
+                        25:00
+                    </div>
+                    <div id="message-container" class="h-8 mt-2">
+                        <p id="message-text" class="serif-text text-lg text-[var(--text-muted)] italic fade-in">
+                            "One step at a time."
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Area -->
+            <div class="space-y-6">
+                <!-- Play Controls -->
+                <div class="flex items-center gap-4">
+                    <button onclick="toggleTimer()" id="start-btn" class="btn-primary flex-1 py-4 rounded-2xl text-lg font-semibold shadow-lg shadow-[rgba(0,0,0,0.05)]">
+                        Start Session
+                    </button>
+                    <button onclick="resetTimer()" class="btn-secondary px-6 py-4 rounded-2xl text-lg" aria-label="Reset Timer">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74-2.74L3 12" /></svg>
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap gap-2 pt-2">
+                    <button onclick="setTime(15)" class="btn-secondary flex-1 min-w-[60px] py-2 rounded-xl text-sm font-medium hover:bg-[var(--text-muted)]/5">15m</button>
+                    <button onclick="setTime(25)" class="btn-secondary flex-1 min-w-[60px] py-2 rounded-xl text-sm font-bold bg-[var(--text-muted)]/10 border-transparent">25m</button>
+                    <button onclick="setTime(45)" class="btn-secondary flex-1 min-w-[60px] py-2 rounded-xl text-sm font-medium hover:bg-[var(--text-muted)]/5">45m</button>
+                    <button onclick="setTime(60)" class="btn-secondary flex-1 min-w-[60px] py-2 rounded-xl text-sm font-medium hover:bg-[var(--text-muted)]/5">60m</button>
+                    
+                
+                    <div class="flex-1 min-w-[70px] relative">
+                         <input type="number" id="custom-input" placeholder="Custom" min="1" max="240" 
+                            class="input-secondary w-full h-full rounded-xl text-center text-sm placeholder-[var(--text-muted)]/50"
+                            onchange="setCustomTime(this.value)"
+                            onkeydown="if(event.key === 'Enter') setCustomTime(this.value)"
+                         >
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:w-[62%] flex flex-col h-full min-h-[300px] lg:min-h-[500px]">
+            
+            <!-- Video Wrapper -->
+            <div class="video-frame w-full flex-grow relative group">
+                <!-- YouTube Player -->
+                <div id="player" class="absolute inset-0 w-full h-full"></div>
+                
+                <!-- Subtle Overlay when paused (Optional visual polish) -->
+                <div id="video-overlay" class="absolute inset-0 bg-black/10 pointer-events-none transition-opacity duration-500 opacity-0"></div>
+            </div>
+
+            <!-- Video Controls / Info -->
+            <div class="mt-5 flex items-center justify-between px-1">
+                <div class="flex flex-col">
+                    <span class="text-[10px] font-bold tracking-widest uppercase text-[var(--text-muted)] mb-1">Soundtrack</span>
+                    <span id="current-video-title" class="serif-text text-lg text-[var(--text-main)] truncate max-w-[200px] md:max-w-xs">
+                        Loading...
+                    </span>
+                </div>
+                
+                <button onclick="playRandomVideo()" class="btn-secondary flex items-center gap-2 px-4 py-2 rounded-full text-xs uppercase tracking-wider font-bold hover:bg-[var(--text-muted)]/10">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18h6" /><path d="M23 6v6h-6" /><path d="M23 6a10 10 0 0 1-10 10" /><path d="M15 21a3 3 0 1 1-6 0" /></svg>
+                    Shuffle Scene
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <audio id="alarm-sound" preload="auto">
+        <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // --- Configuration ---
+        let timeLeft = 25 * 60;
+        let timerId = null;
+        let duration = 25;
+        let isCinemaMode = false;
+        
+        // --- Notification Setup ---
+        function requestNotificationPermission() {
+            if ("Notification" in window) {
+                Notification.requestPermission();
+            }
+        }
+
+        // --- Messaging System ---
+        const workMessages = [
+            "Focus on the process Bitch ",
+            "Breathe stink your",
+            "Maa chod do",
+            "lessgooo nigga",
+            "lets do this shii man",
+            "ahaa less gooo",
+            "Hoo rhi h padai",
+            "Keep the shii up.",
+            "Trust in niggasaourus"
+        ];
+
+        const doneMessages = [
+            "Gand faad di lessgoo",
+            "Take a deep breath and say gang gang",
+            "sojao ab",
+            "ahaaa get it done",
+            "now come rest in my arms."
+        ];
+
+        // --- YouTube API ---
+        let player;
+        const playlist = [
+            { id: 'S9WYZXM1XsI', title: 'its snowing. you should rest' },
+            { id: 'OclLUOp67Jg', title: 'you built a cabin in the woods to play piano alone, in peace' },
+            { id: 'siq9ln7EvmA', title: 'to those who are thinking of leaving' }, 
+            { id: 'Og2lNwTyEoA', title: 'then it all went silent' },
+            { id: 'QZleeuCKhgU', title: 'you are lightyears away from earth, wondering what this all means..' },
+            { id: 'rSRS0P3Rzis', title: 'songs for surviving one of those nights.' },
+        ];
+        
+        let currentVideoIndex = 0;
+
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        function onYouTubeIframeAPIReady() {
+            currentVideoIndex = Math.floor(Math.random() * playlist.length);
+            updateVideoTitleUI();
+
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                videoId: playlist[currentVideoIndex].id,
+                playerVars: {
+                    'playsinline': 1,
+                    'controls': 1, 
+                    'modestbranding': 1,
+                    'rel': 0,
+                    'showinfo': 0,
+                    'iv_load_policy': 3
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerReady(event) { }
+
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.ENDED && timerId !== null) {
+                player.playVideo();
+            }
+        }
+
+        function playRandomVideo() {
+            let newIndex;
+            do {
+                newIndex = Math.floor(Math.random() * playlist.length);
+            } while (newIndex === currentVideoIndex && playlist.length > 1);
+            
+            currentVideoIndex = newIndex;
+            updateVideoTitleUI();
+            
+            if(player && player.loadVideoById) {
+                player.loadVideoById(playlist[currentVideoIndex].id);
+                if(timerId === null) {
+                    player.stopVideo();
+                }
+            }
+        }
+
+        function updateVideoTitleUI() {
+            const titleEl = document.getElementById('current-video-title');
+            if(titleEl) titleEl.textContent = playlist[currentVideoIndex].title;
+        }
+
+        // --- Timer Logic ---
+        function updateDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timer-display').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            document.title = `${minutes}:${seconds.toString().padStart(2, '0')} • Cozy Focus`;
+        }
+
+        function toggleTimer() {
+            const btn = document.getElementById('start-btn');
+            
+            if (timerId) {
+                clearInterval(timerId);
+                timerId = null;
+                btn.textContent = "Resume Session";
+                btn.style.opacity = "0.9";
+                if(player && player.pauseVideo) player.pauseVideo();
+            } else {
+                requestNotificationPermission();
+                if (timeLeft === 0) return; 
+                
+                btn.textContent = "Pause Session";
+                btn.style.opacity = "1";
+                if(player && player.playVideo) player.playVideo();
+
+                displayRandomMessage(workMessages);
+
+                timerId = setInterval(() => {
+                    timeLeft--;
+                    updateDisplay();
+                    if (timeLeft % 300 === 0 && timeLeft !== 0) displayRandomMessage(workMessages);
+                    if (timeLeft <= 0) finishTimer();
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerId);
+            timerId = null;
+            timeLeft = duration * 60;
+            updateDisplay();
+            document.title = "Cozy Focus";
+            
+            const btn = document.getElementById('start-btn');
+            btn.textContent = "Start Session";
+            if(player && player.pauseVideo) player.pauseVideo();
+            displayMessage("Ready to begin?");
+        }
+
+        // --- Duration & Custom Time Logic ---
+        function setTime(mins) {
+            if (timerId) resetTimer();
+            duration = mins;
+            timeLeft = duration * 60;
+            updateDisplay();
+            
+            // Clear styles for all preset buttons
+            const buttons = document.querySelectorAll('button[onclick^="setTime"]');
+            buttons.forEach(b => {
+                b.classList.remove('bg-[var(--text-muted)]/10', 'font-bold', 'border-transparent');
+                b.classList.add('hover:bg-[var(--text-muted)]/5');
+            });
+            
+            // Highlight specific preset if text matches exactly
+            // Using strict check to prevent '5' matching '15' or '25'
+            const clickedBtn = Array.from(buttons).find(b => b.textContent.trim() === `${mins}m`);
+            
+            if(clickedBtn) {
+                clickedBtn.classList.add('bg-[var(--text-muted)]/10', 'font-bold', 'border-transparent');
+                clickedBtn.classList.remove('hover:bg-[var(--text-muted)]/5');
+                // Clear custom input if a preset is clicked
+                const customInput = document.getElementById('custom-input');
+                if(customInput) customInput.value = '';
+            }
+        }
+
+        function setCustomTime(val) {
+            const mins = parseInt(val);
+            if (mins && mins > 0) {
+                setTime(mins);
+            }
+        }
+
+        function finishTimer() {
+            clearInterval(timerId);
+            timerId = null;
+            
+            const btn = document.getElementById('start-btn');
+            btn.textContent = "Start Session";
+            
+            const alarm = document.getElementById('alarm-sound');
+            if(alarm) {
+                alarm.volume = 0.5; 
+                alarm.play().catch(e => console.log("Audio play failed:", e));
+            }
+
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification("Session Complete", { 
+                    body: "Great job! Take a moment to breathe.",
+                    icon: "https://img.icons8.com/parakeet/48/time.png"
+                });
+            }
+
+            if(player && player.pauseVideo) player.pauseVideo();
+            displayRandomMessage(doneMessages);
+            document.title = "Session Complete";
+        }
+
+        function toggleCinemaMode() {
+            document.body.classList.toggle('cinema-mode');
+            const btnText = document.querySelector('button[onclick="toggleCinemaMode()"] span');
+            isCinemaMode = !isCinemaMode;
+            btnText.textContent = isCinemaMode ? "Light Mode" : "Cinema Mode";
+        }
+
+        function displayMessage(msg) {
+            const el = document.getElementById('message-text');
+            el.style.opacity = 0;
+            el.style.transform = "translateY(5px)";
+            setTimeout(() => {
+                el.textContent = msg;
+                el.style.opacity = 1;
+                el.style.transform = "translateY(0)";
+            }, 300);
+        }
+
+        function displayRandomMessage(array) {
+            const msg = array[Math.floor(Math.random() * array.length)];
+            displayMessage(msg);
+        }
+    </script>
+</body>
+</html>
